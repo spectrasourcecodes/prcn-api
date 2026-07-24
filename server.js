@@ -40,7 +40,7 @@ const app = express();
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
   cors: {
-    origin: process.env.CLIENT_URL || 'https://ark-f7bh.onrender.com',
+    origin: process.env.CLIENT_URL || 'https://prcn.vercel.app/',
     methods: ['GET', 'POST'],
     credentials: true,
   },
@@ -62,7 +62,7 @@ app.use(helmet({
 }));
 
 app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:5173',
+  origin: process.env.CLIENT_URL || 'https://prcn.vercel.app/',
   credentials: true,
 }));
 
