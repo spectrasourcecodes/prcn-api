@@ -85,13 +85,13 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // app.use('/api', limiter);
 
 // Stricter rate limit for auth routes
-const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 20,
-  skipSuccessfulRequests: true,
-  message: 'Too many authentication attempts, please try again later.',
-});
-app.use('/api/auth', authLimiter);
+// const authLimiter = rateLimit({
+//   windowMs: 15 * 60 * 1000,
+//   max: 20,
+//   skipSuccessfulRequests: true,
+//   message: 'Too many authentication attempts, please try again later.',
+// });
+// app.use('/api/auth', authLimiter);
 
 // Routes
 app.use('/api/auth', authRoutes);
