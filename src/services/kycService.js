@@ -29,14 +29,12 @@ class KYCService {
     }
 
     // If all steps complete, set status to pending (if not already)
-    const allComplete = Object.values(kyc.stepsCompleted).every(v => v === true);
-    if (allComplete && kyc.status === 'pending') {
-      // already pending
-    } else if (allComplete && kyc.status === 'rejected') {
-      // reset to pending for re-review
-      kyc.status = 'pending';
-    } else if (allComplete) {
-      kyc.status = 'pending';
+    const allComplete = Object.values(kyc.stepsCompleted).every(
+      v => v === true
+    );
+
+    if (allComplete) {
+      kyc.status = 'verified';
     }
 
     await kyc.save();
