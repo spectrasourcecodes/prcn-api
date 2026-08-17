@@ -83,6 +83,11 @@ exports.login = asyncHandler(async (req, res) => {
     throw new AppError('Invalid credentials', 401);
   }
 
+  // Check if account is active
+  if (!user.isActive) {
+    throw new AppError('Your account has been suspended. Please contact support.', 403);
+  }
+
   // Reset login attempts on success
   await user.resetLoginAttempts();
   user.lastLogin = new Date();
