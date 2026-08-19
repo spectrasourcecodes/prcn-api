@@ -78,7 +78,7 @@ exports.login = asyncHandler(async (req, res) => {
   }
 
   // Check if locked
-  if (user.isActive()) {
+  if (!user.isActive) {
     throw new AppError('Account Frozen. Please contact support.', 403);
   }
 
