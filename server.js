@@ -4,7 +4,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 const compression = require('compression');
 const morgan = require('morgan');
-// const rateLimit = require('express-rate-limit');
+const rateLimit = require('express-rate-limit');
 const { createServer } = require('http');
 const { Server } = require('socket.io');
 const dotenv = require('dotenv');
@@ -31,16 +31,19 @@ const marketRoutes = require('./src/routes/marketRoutes');
 const referralRoutes = require('./src/routes/referralRoutes');
 const notificationRoutes = require('./src/routes/notificationRoutes');
 const proofRoutes = require('./src/routes/proofRoutes');
+const transactionRoutes = require('./src/routes/transactionRoutes')
 
 // Import cron jobs
 const startROICalculation = require('./src/jobs/roiCalculator');
 const startMarketUpdater = require('./src/jobs/marketUpdater');
+const startDailyBonus = require('./src/jobs/dailyBonus');
+
 
 const app = express();
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
   cors: {
-    origin: process.env.CLIENT_URL || 'https://prcn.vercel.app/',
+    origin: process.env.CLIENT_URL || 'https://procoin-six.vercel.app/',
     methods: ['GET', 'POST'],
     credentials: true,
   },
@@ -62,7 +65,7 @@ app.use(helmet({
 }));
 
 app.use(cors({
-  origin: process.env.CLIENT_URL || 'https://prcn.vercel.app/',
+  origin: process.env.CLIENT_URL || 'http://localhost:5173',
   credentials: true,
 }));
 
@@ -75,23 +78,23 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Rate limiting
-// const limiter = rateLimit({
-//   windowMs: 15 * 60 * 1000,
-//   max: 100,
-//   standardHeaders: true,
-//   legacyHeaders: false,
-//   message: 'Too many requests from this IP, please try again later.',
-// });
-// app.use('/api', limiter);
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: 'Too many requests from this IP, please try again later.',
+});
+app.use('/api', limiter);
 
 // Stricter rate limit for auth routes
-// const authLimiter = rateLimit({
-//   windowMs: 15 * 60 * 1000,
-//   max: 20,
-//   skipSuccessfulRequests: true,
-//   message: 'Too many authentication attempts, please try again later.',
-// });
-// app.use('/api/auth', authLimiter);
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  skipSuccessfulRequests: true,
+  message: 'Too many authentication attempts, please try again later.',
+});
+app.use('/api/auth', authLimiter);
 
 // Routes
 app.use('/api/auth', authRoutes);
@@ -105,6 +108,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/market', marketRoutes);
 app.use('/api/referrals', referralRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/transactions', transactionRoutes);
 app.use('/api/proofs', proofRoutes);
 
 
@@ -137,19 +141,29 @@ httpServer.listen(PORT, () => {
   logger.info(`🔗 Client URL: ${process.env.CLIENT_URL || 'http://localhost:5173'}`);
   
   // Start cron jobs
+  // Start cron jobs
+
+  try {
+    startDailyBonus(); // ✅ NEW
+    logger.info('✅ Daily bonus scheduled');
+  } catch (error) {
+    logger.error(`Failed to start daily bonus: ${error.message}`);
+  }
+  
   try {
     startROICalculation();
     logger.info('✅ ROI calculator scheduled');
   } catch (error) {
     logger.error(`Failed to start ROI calculator: ${error.message}`);
   }
-  
+
   try {
     startMarketUpdater();
     logger.info('✅ Market updater scheduled');
   } catch (error) {
     logger.error(`Failed to start market updater: ${error.message}`);
   }
+
 });
 
 // Graceful shutdown

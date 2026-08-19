@@ -1,7 +1,7 @@
 const Wallet = require('../models/Wallet');
 const Transaction = require('../models/Transaction');
-const Deposit = require('../models/Deposit');      
-const Withdrawal = require('../models/Withdrawal'); 
+const Deposit = require('../models/Deposit');      // ✅ Add
+const Withdrawal = require('../models/Withdrawal'); // ✅ Add
 const { v4: uuidv4 } = require('uuid');
 const AppError = require('../utils/appError');
 const logger = require('../utils/logger');

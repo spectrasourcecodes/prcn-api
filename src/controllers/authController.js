@@ -1,5 +1,6 @@
 const User = require('../models/User');
 const Wallet = require('../models/Wallet');
+const jwt = require('jsonwebtoken');
 const { asyncHandler } = require('../utils/asyncHandler');
 const AppError = require('../utils/appError');
 const { generateToken, generateRefreshToken, verifyRefreshToken } = require('../utils/generateToken');
@@ -83,11 +84,6 @@ exports.login = asyncHandler(async (req, res) => {
     throw new AppError('Invalid credentials', 401);
   }
 
-  // Check if account is active
-  if (!user.isActive) {
-    throw new AppError('Your account has been suspended. Please contact support.', 403);
-  }
-
   // Reset login attempts on success
   await user.resetLoginAttempts();
   user.lastLogin = new Date();
@@ -131,4 +127,77 @@ exports.logout = asyncHandler(async (req, res) => {
 exports.verifyEmail = asyncHandler(async (req, res) => {
   // Implementation will use JWT token sent in email
   res.json({ success: true, message: 'Email verified' });
+});
+
+
+// Verify email exists and return user
+exports.verifyEmailExists = asyncHandler(async (req, res) => {
+  const { email } = req.body;
+  
+  if (!email) {
+    throw new AppError('Email is required', 400);
+  }
+  
+  const user = await User.findOne({ email });
+  if (!user) {
+    throw new AppError('No account found with this email', 404);
+  }
+  
+  // Generate a temporary token for password reset (valid for 5 minutes)
+  const resetToken = jwt.sign(
+    { id: user._id, email: user.email },
+    process.env.JWT_SECRET,
+    { expiresIn: '5m' }
+  );
+  
+  res.json({
+    success: true,
+    message: 'Email verified. Please reset your password.',
+    data: {
+      token: resetToken,
+      email: user.email,
+    }
+  });
+});
+
+// Reset password without email (direct)
+exports.resetPasswordDirect = asyncHandler(async (req, res) => {
+  const { token, newPassword, confirmPassword } = req.body;
+  
+  if (!token || !newPassword || !confirmPassword) {
+    throw new AppError('All fields are required', 400);
+  }
+  
+  if (newPassword !== confirmPassword) {
+    throw new AppError('Passwords do not match', 400);
+  }
+  
+  if (newPassword.length < 6) {
+    throw new AppError('Password must be at least 6 characters', 400);
+  }
+  
+  // Verify token
+  let decoded;
+  try {
+    decoded = jwt.verify(token, process.env.JWT_SECRET);
+  } catch (error) {
+    throw new AppError('Invalid or expired token. Please try again.', 400);
+  }
+  
+  const user = await User.findById(decoded.id);
+  if (!user) {
+    throw new AppError('User not found', 404);
+  }
+  
+  // Update password
+  user.password = newPassword;
+  await user.save();
+  
+  // Log user out from all devices (optional)
+  // You can clear all tokens if you want
+  
+  res.json({
+    success: true,
+    message: 'Password reset successfully. Please login with your new password.',
+  });
 });

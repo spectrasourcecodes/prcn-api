@@ -14,7 +14,7 @@ const startROICalculation = () => {
             }
             isRunning = true;
             try {
-                logger.info("Starting daily ROI calculation***");
+                logger.info("Starting daily ROI calculation...");
                 const result =
                     await investmentService.calculateDailyROI();
                 logger.info(
