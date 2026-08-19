@@ -77,6 +77,11 @@ exports.login = asyncHandler(async (req, res) => {
     throw new AppError('Account locked due to multiple failed attempts. Please try again later.', 403);
   }
 
+  // Check if locked
+  if (user.isActive()) {
+    throw new AppError('Account Frozen. Please contact support.', 403);
+  }
+
   // Verify password
   const isMatch = await user.matchPassword(password);
   if (!isMatch) {
