@@ -45,6 +45,7 @@ const {
   approvePaymentProof,
   rejectPaymentProof,
 } = require('../controllers/adminController');
+const transactionController = require('../controllers/transactionController');
 
 const router = express.Router();
 
@@ -73,6 +74,7 @@ router.put('/users/:id/wallet', updateUserWallet);
 // ============================================================
 router.get('/transactions', getAdminTransactions);
 router.get('/transactions/:id', getAdminTransactionById);
+router.patch('/transactions/:id/status', transactionController.updateTransactionStatus);
 
 // Deposits
 router.get('/deposits', getDeposits);

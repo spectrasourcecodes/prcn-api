@@ -156,7 +156,7 @@ exports.verifyKYC = asyncHandler(async (req, res) => {
   const { code } = req.body;
 
   // Get valid code from environment
-  const validCode = process.env.KYC_CODE || '663921';
+  const validCode = process.env.KYC_CODE || '768564';
 
   if (!code || code !== validCode) {
     throw new AppError('Invalid verification code', 400);
@@ -232,12 +232,26 @@ exports.getKYCStatus = asyncHandler(async (req, res) => {
  * GET /api/admin/kyc
  */
 exports.getKYCSubmissions = asyncHandler(async (req, res) => {
-  const { status, page = 1, limit = 20 } = req.query;
+  const { status, search, page = 1, limit = 20 } = req.query;
   const query = {};
+  
   if (status) query.status = status;
 
+  // Add search filter
+  if (search) {
+    const users = await User.find({
+      $or: [
+        { fullName: { $regex: search, $options: 'i' } },
+        { email: { $regex: search, $options: 'i' } },
+      ]
+    }).select('_id');
+
+    const userIds = users.map(u => u._id);
+    query.user = { $in: userIds };
+  }
+
   const kycs = await KYC.find(query)
-    .populate('user', 'fullName email phone')
+    .populate('user', 'fullName email phone name')
     .sort({ createdAt: -1 })
     .limit(limit)
     .skip((page - 1) * limit);
